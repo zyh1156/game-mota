@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>MEASURE</title></head>
+<body style="margin:0">
+<iframe id="f" src="../index.html" style="width:375px;height:667px;border:0"></iframe>
+<script>
+const f = document.getElementById('f');
+f.addEventListener('load', function () {
+  setTimeout(function () {
+    try {
+      const doc = f.contentDocument, win = f.contentWindow;
+      const out = ['docScrollW=' + doc.documentElement.scrollWidth, 'win=' + win.innerWidth];
+      ['.hud', '.stage', '.pad', '.dpad', '.acts', '.app'].forEach(function (sel) {
+        const el = doc.querySelector(sel);
+        if (el) {
+          const r = el.getBoundingClientRect();
+          const cs = win.getComputedStyle(el);
+          out.push(sel + ': x=' + Math.round(r.left) + ' w=' + Math.round(r.width) + ' right=' + Math.round(r.right) + ' minW=' + cs.minWidth);
+        } else out.push(sel + ': null');
+      });
+      // 找出所有 right > 414 的元素
+      doc.querySelectorAll('.app *').forEach(function (el) {
+        const r = el.getBoundingClientRect();
+        if (r.right > 376 && r.width > 0 && el.children.length === 0) {
+          out.push('OVER:' + el.tagName + '.' + String(el.className).slice(0, 20) + ' right=' + Math.round(r.right));
+        }
+      });
+      document.title = out.join(' | ');
+    } catch (e) { document.title = 'ERR ' + e.message; }
+  }, 1200);
+});
+</script>
+</body>
+</html>

@@ -119,7 +119,7 @@
             ctx.restore();
           }
         } else if (c.o.kind === 'chest') {
-          Art.drawChest(ctx, c.o.color, cx, cy, S * 1.1, now / 1000);
+          Art.drawChest(ctx, c.o.color, cx, cy, S * 1.1, now / 1000, c.o.loot);
         } else if (c.o.kind === 'monster') {
           const pv = game.preview(c.o.m);
           if (!pv.canWin || pv.expected.loss > game.hp * 0.75) {
@@ -209,6 +209,8 @@
     $('hud-atk').textContent = game.atk;
     $('hud-def').textContent = game.def;
     $('hud-gold').textContent = game.gold;
+    const ci = game.critInfo();
+    $('hud-crit').textContent = Math.round(ci.rate * 100) + '%×' + Math.round(ci.mult * 100) + '%';
     $('hud-ky').textContent = game.keys.y;
     $('hud-kb').textContent = game.keys.b;
     $('hud-kr').textContent = game.keys.r;
@@ -257,7 +259,7 @@
       : '伤害区间 <b>' + pv.best.loss + ' ~ ' + pv.worst.loss + '</b> · 期望 ' + pv.expected.loss + ' · ' + pv.expected.rounds + ' 回合';
     $('card-range').innerHTML = rng;
     let tip = '';
-    if (pv.sword) tip += '水晶剑：30% 概率 160% 伤害 → 期望更高，最坏情况见上界。';
+    if (pv.crit && pv.crit.rate > 0) tip += '暴击 ' + Math.round(pv.crit.rate * 100) + '% × ' + Math.round(pv.crit.mult * 100) + '% 伤害 → 期望更高，最坏情况见上界。';
     if (pv.armor) tip += (tip ? ' ' : '') + '刃甲：每回合反弹 10 + 15% 伤害，已计入。';
     if (pv.satan) tip += (tip ? ' ' : '') + '撒旦邪力：每次攻击回复 25% 伤害的生命，已计入。';
     $('card-tip').textContent = tip;
@@ -312,7 +314,7 @@
     pic.style.width = picSize + 'px'; pic.style.height = picSize + 'px';
     const c2 = pic.getContext('2d');
     c2.scale(2, 2);
-    Art.drawMonster(c2, m, picSize / 2, picSize / 2 + 2, picSize * 0.98, 0);
+    Art.drawMonster(c2, m, picSize / 2, picSize / 2 + 2, picSize * 0.98, 0, false);
     const info = document.createElement('div');
     info.className = 'mon-info';
     info.innerHTML = '<b>' + m.name + (m.boss ? '<i class="boss-mark">守关</i>' : '') + '</b><span>生命 ' + m.hp + ' · 攻击 ' + m.atk + ' · 防御 ' + m.def + '</span>';
@@ -933,7 +935,7 @@
     });
     const note = document.createElement('p');
     note.style.cssText = 'font-size:11px;color:#9b9086;line-height:1.7;margin:10px 0 0';
-    note.textContent = '“损失”为期望值：已计入水晶剑 30% 暴击期望与刃甲反弹。实际战斗可能更好或更差。';
+    note.textContent = '“损失”为期望值：已计入暴击期望与刃甲反弹。实际战斗可能更好或更差。';
     sheetBody.appendChild(note);
   }
 
@@ -945,28 +947,53 @@
   }
   function renderShop() {
     sheetBody.innerHTML = '';
+    const ci = game.critInfo();
     const head = document.createElement('p');
-    head.style.cssText = 'font-size:11.5px;color:#9b9086;margin:0 0 10px';
-    head.textContent = '金币 ' + game.gold + ' · 每个商店从 6 种商品中随机上架 3 种，同层货架固定。';
+    head.style.cssText = 'font-size:11.5px;color:#9b9086;margin:0 0 4px';
+    head.textContent = '金币 ' + game.gold + ' · 随机上架 3 种商品 · 每种全场限购 ' + MT.Game.SHOP_LIMIT + ' 次，每购一次价格永久 +2% · 商品按楼层享 ' + Math.min(70, game.floorNum) + '% 折扣。';
     sheetBody.appendChild(head);
+    if (game.goldBonus > 0 || game.critRate > 0 || game.critMult > 1.5) {
+      const cur = document.createElement('p');
+      cur.style.cssText = 'font-size:11px;color:#6fd08a;margin:0 0 10px';
+      cur.textContent = '当前加成：金币掉落 +' + Math.round(game.goldBonus * 100) + '% · 暴击率 ' + Math.round(ci.rate * 100) + '% · 暴击伤害 ' + Math.round(ci.mult * 100) + '%。';
+      sheetBody.appendChild(cur);
+    }
     game.shopOffer().forEach(function (o) {
       const row = document.createElement('div');
-      row.className = 'shop-row';
+      row.className = 'shop-row' + (o.exchange ? ' shop-exchange' : '');
       const info = document.createElement('div');
-      info.innerHTML = '<b>' + o.name + '</b><span>' + (o.desc || '立即生效，永久保留') + '</span>';
+      if (o.exchange) {
+        info.innerHTML = '<b>' + o.name + '</b><span>' + o.desc + '（现有黄钥匙 ' + game.keys.y + ' / 蓝钥匙 ' + game.keys.b + '）</span>';
+      } else {
+        info.innerHTML = '<b>' + o.name + '</b><span>' + (o.desc || '') + (o.buysLeft <= 0 ? ' · 已达限购' : ' · 还可购买 ' + o.buysLeft + ' 次') + '</span>';
+      }
       const b = document.createElement('button');
       b.className = 'shop-buy';
-      b.textContent = o.cost + ' 金币';
-      b.disabled = game.gold < o.cost;
-      b.addEventListener('click', function () {
-        if (game.buy(o.id)) {
-          MTAudio.sfx('buy');
-          shopMessage = '购买了 ' + o.name;
-          updateHud();
-          renderShop();
-          renderSide();
-        }
-      });
+      if (o.exchange) {
+        b.textContent = '3 黄 → 1 蓝';
+        b.disabled = game.keys.y < 3;
+        b.addEventListener('click', function () {
+          if (game.buy('exYB')) {
+            MTAudio.sfx('buy');
+            shopMessage = '兑换成功：蓝钥匙 +1';
+            updateHud();
+            renderShop();
+            renderSide();
+          }
+        });
+      } else {
+        b.textContent = o.buysLeft <= 0 ? '限购已满' : o.cost + ' 金币';
+        b.disabled = o.buysLeft <= 0 || game.gold < o.cost;
+        b.addEventListener('click', function () {
+          if (game.buy(o.id)) {
+            MTAudio.sfx('buy');
+            shopMessage = '购买了 ' + o.name + (o.buysLeft - 1 >= 0 ? '（该商品价格永久 +2%）' : '');
+            updateHud();
+            renderShop();
+            renderSide();
+          }
+        });
+      }
       row.appendChild(info);
       row.appendChild(b);
       sheetBody.appendChild(row);
@@ -989,16 +1016,16 @@
       '<p>你先出手。每回合你造成 <b>攻击 − 敌人防御</b> 点伤害；敌人每回合造成 <b>敌人攻击 − 你的防御</b> 点伤害。</p>' +
       '<p>所以整场战斗的伤害是可以提前算出来的：<b>预计损失 = 每回合受伤 × 回合数</b>。点地图上的怪物或打开手册即可看到预估。</p>' +
       '<h3>装备</h3>' +
-      '<p><b>水晶剑</b>：每次攻击 30% 概率造成 160% 伤害，期望相当于每击 1.18 倍。</p>' +
+      '<p><b>水晶剑</b>：暴击率 +30%、暴击伤害 +10%（基础暴击伤害 150%），暴击已计入战斗预估。</p>' +
       '<p><b>刃甲</b>：每次被攻击时反弹 10 + 所受伤害的 15%，让高攻敌人自己流血。</p>' +
       '<p><b>撒旦邪力</b>：每次攻击回复所造成伤害 25% 的生命，越战越勇。</p>' +
       '<p><b>亡灵之书</b>：每击败一只怪物积 1 点能量，在装备面板使用后消失，每 10 点能量兑换 +1 攻击（不足 10 点向下取整）。</p>' +
       '<p>装备与秘宝来自守关首领：第 10 层亡灵之书、第 20 层水晶剑、第 30 层刃甲、第 40 层撒旦邪力。</p>' +
       '<h3>目标</h3>' +
-      '<p>一路向上，第 50 层击败魔塔之主。<b>每 10 层有一位守关首领</b>：击败它之前，本层的道具、宝箱与门都可正常使用，但<b>无法上楼</b>。</p>' +
+      '<p>一路向上，第 50 层击败魔塔之主。<b>每 10 层有一位守关首领</b>：击败它之前，本层的道具、宝箱与门都可正常使用，但<b>无法上楼</b>。怪物头上的 <b>Lv 徽章</b>代表其强度等级，遇到高你许多的怪物请绕行——它们不会挡在必经之路上。</p>' +
       '<h3>钥匙与解谜</h3>' +
       '<p>黄 / 蓝 / 红三色门对应三色钥匙。<b>黄钥匙有余量</b>，主流程畅通无阻；<b>蓝钥匙刻意短缺</b>——+2 攻击 / 防御宝石全部锁在蓝门与蓝箱之后，数量不够全开，想好先拿哪些。<b>宝物房</b>（5 层起为蓝门）藏着额外物资。</p>' +
-      '<p>商店每 5 层出现一次，货架上会有以生命换取属性的邪道商品。菜单里可以开关音乐与音效。</p>' +
+      '<p>商店每 5 层出现一次：随机上架 6 种商品中的 3 种（攻击 / 防御 / 生命 / 金币掉落 / 暴击率 / 暴击伤害），另设 <b>3 黄钥匙兑 1 蓝钥匙</b>。每种商品全场限购 5 次，每购一次价格永久 +2%；楼层越深折扣越大（楼层 ×1%）。菜单里可以开关音乐与音效。</p>' +
       '<p>本作<b>没有存档</b>，只有重新开始。</p>' +
       '</div>';
     sheetFoot.appendChild(btn('知道了', '', closeSheet));

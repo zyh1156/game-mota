@@ -203,28 +203,90 @@
     }
 
     if (kind === 'shop') {
-      ctx.fillStyle = 'rgba(0,0,0,0.35)';
-      rr(ctx, S * 0.12, S * 0.18, S * 0.76, S * 0.7, S * 0.1);
+      // 招揽光晕
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      const glow = ctx.createRadialGradient(S * 0.5, S * 0.55, S * 0.05, S * 0.5, S * 0.55, S * 0.62);
+      glow.addColorStop(0, 'rgba(240,190,90,0.20)');
+      glow.addColorStop(1, 'rgba(240,190,90,0)');
+      ctx.fillStyle = glow;
+      ctx.fillRect(0, 0, S, S);
+      ctx.restore();
+      // 店面主体（暖木色小屋）
+      ctx.fillStyle = '#7a5a38';
+      rr(ctx, S * 0.14, S * 0.30, S * 0.72, S * 0.56, S * 0.06);
       ctx.fill();
-      // 遮阳棚
-      for (let i = 0; i < 4; i++) {
-        ctx.fillStyle = i % 2 ? '#c9a24a' : '#8a3b34';
+      ctx.fillStyle = 'rgba(0,0,0,0.22)';
+      rr(ctx, S * 0.14, S * 0.74, S * 0.72, S * 0.12, S * 0.05);
+      ctx.fill();
+      // 经典红白条纹遮阳棚（带扇贝垂边）
+      for (let i = 0; i < 5; i++) {
+        const x0 = S * (0.10 + i * 0.16), w = S * 0.16;
+        ctx.fillStyle = i % 2 ? '#f2ede2' : '#c8402f';
         ctx.beginPath();
-        ctx.moveTo(S * (0.14 + i * 0.18), S * 0.2);
-        ctx.lineTo(S * (0.32 + i * 0.18), S * 0.2);
-        ctx.lineTo(S * (0.3 + i * 0.18), S * 0.42);
-        ctx.lineTo(S * (0.16 + i * 0.18), S * 0.42);
+        ctx.moveTo(x0, S * 0.14);
+        ctx.lineTo(x0 + w, S * 0.14);
+        ctx.lineTo(x0 + w, S * 0.30);
+        ctx.arc(x0 + w / 2, S * 0.30, w / 2, 0, Math.PI);
         ctx.closePath();
         ctx.fill();
+        ctx.strokeStyle = 'rgba(0,0,0,0.25)';
+        ctx.lineWidth = Math.max(1, S * 0.012);
+        ctx.stroke();
       }
-      // 柜台
-      ctx.fillStyle = '#5a4632';
-      rr(ctx, S * 0.18, S * 0.56, S * 0.64, S * 0.26, S * 0.05);
+      // 棚顶阴影线
+      ctx.fillStyle = 'rgba(0,0,0,0.18)';
+      rr(ctx, S * 0.10, S * 0.14, S * 0.80, S * 0.055, S * 0.03);
       ctx.fill();
+      // 发光橱窗（暖黄 + 十字窗棂 + 金币映在窗里）
+      const winG = ctx.createLinearGradient(0, S * 0.40, 0, S * 0.68);
+      winG.addColorStop(0, '#ffdf8e');
+      winG.addColorStop(1, '#e8a83e');
+      ctx.fillStyle = winG;
+      rr(ctx, S * 0.20, S * 0.40, S * 0.26, S * 0.28, S * 0.04);
+      ctx.fill();
+      ctx.strokeStyle = '#5a4632';
+      ctx.lineWidth = Math.max(1.4, S * 0.035);
+      ctx.strokeRect(S * 0.20, S * 0.40, S * 0.26, S * 0.28);
+      ctx.beginPath();
+      ctx.moveTo(S * 0.33, S * 0.40); ctx.lineTo(S * 0.33, S * 0.68);
+      ctx.moveTo(S * 0.20, S * 0.54); ctx.lineTo(S * 0.46, S * 0.54);
+      ctx.stroke();
+      ctx.fillStyle = '#f6cf5a';
+      ctx.strokeStyle = '#8a6420';
+      ctx.lineWidth = Math.max(1, S * 0.02);
+      ctx.beginPath();
+      ctx.arc(S * 0.265, S * 0.47, S * 0.045, 0, TAU);
+      ctx.fill(); ctx.stroke();
+      // 木门（金色门把）
+      ctx.fillStyle = '#4a3624';
+      rr(ctx, S * 0.54, S * 0.42, S * 0.26, S * 0.44, S * 0.04);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(217,181,92,0.6)';
+      ctx.lineWidth = Math.max(1, S * 0.02);
+      ctx.stroke();
       ctx.fillStyle = '#d9b55c';
       ctx.beginPath();
-      ctx.arc(S * 0.5, S * 0.68, S * 0.07, 0, TAU);
+      ctx.arc(S * 0.755, S * 0.64, S * 0.025, 0, TAU);
       ctx.fill();
+      // 悬挂招牌：金币"¥"
+      ctx.strokeStyle = '#8a6420';
+      ctx.lineWidth = Math.max(1, S * 0.018);
+      ctx.beginPath();
+      ctx.moveTo(S * 0.86, S * 0.14); ctx.lineTo(S * 0.86, S * 0.22);
+      ctx.stroke();
+      ctx.fillStyle = '#f6cf5a';
+      ctx.beginPath();
+      ctx.arc(S * 0.86, S * 0.30, S * 0.085, 0, TAU);
+      ctx.fill();
+      ctx.strokeStyle = '#8a6420';
+      ctx.lineWidth = Math.max(1, S * 0.022);
+      ctx.stroke();
+      ctx.fillStyle = '#6b4a10';
+      ctx.font = '700 ' + Math.round(S * 0.115) + 'px ' + FONT;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('¥', S * 0.86, S * 0.305);
     }
   }
 
@@ -880,7 +942,7 @@
   };
 
   /* 上锁宝箱：金属包边颜色对应开启所需钥匙 */
-  Art.drawChest = function (ctx, color, cx, cy, size, t) {
+  Art.drawChest = function (ctx, color, cx, cy, size, t, loot) {
     const band = color === 'b' ? '#5aa8f0' : color === 'r' ? '#e0534a' : '#e8c34a';
     ctx.save();
     ctx.translate(cx, cy);
@@ -929,11 +991,67 @@
     ctx.moveTo(-14, -18);
     ctx.quadraticCurveTo(0, -21, 14, -18);
     ctx.stroke();
+    /* 内容物图标（蓝箱：攻击/防御宝石 +2，明显可辨） */
+    if (color === 'b' && loot) {
+      const gem = loot === 'gemAtk' ? '#ff6b5a' : loot === 'gemDef' ? '#5ac8ff' : null;
+      if (gem) {
+        // 菱形宝石徽章：黑底金边 + 彩色宝石 + "+2"
+        ctx.fillStyle = 'rgba(12,9,16,0.85)';
+        rr(ctx, -17, -46, 34, 20, 9);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(217,184,106,0.75)';
+        ctx.lineWidth = 1.6;
+        rr(ctx, -17, -46, 34, 20, 9);
+        ctx.stroke();
+        ctx.fillStyle = gem;
+        ctx.beginPath();
+        ctx.moveTo(-9, -36);
+        ctx.lineTo(-5, -42);
+        ctx.lineTo(-1, -36);
+        ctx.lineTo(-5, -30);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+        ctx.lineWidth = 0.9;
+        ctx.stroke();
+        ctx.fillStyle = '#fff3d6';
+        ctx.font = '700 11px system-ui, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('+2', 0, -35.5);
+      } else if (loot === 'potionBlue' || loot === 'potionRed') {
+        // 药水滴形
+        ctx.fillStyle = loot === 'potionBlue' ? '#4a8ce0' : '#e04a4a';
+        ctx.beginPath();
+        ctx.moveTo(0, -44);
+        ctx.quadraticCurveTo(7, -35, 0, -30);
+        ctx.quadraticCurveTo(-7, -35, 0, -44);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      } else if (loot === 'goldBag') {
+        // 金币
+        ctx.fillStyle = '#e8c34a';
+        ctx.beginPath();
+        ctx.arc(0, -36, 6.5, 0, TAU);
+        ctx.fill();
+        ctx.strokeStyle = '#8a6a1e';
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+        ctx.fillStyle = '#8a6a1e';
+        ctx.font = '700 9px system-ui, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('¥', 0, -35.5);
+      }
+    }
     ctx.restore();
   };
 
-  Art.drawMonster = function (ctx, mon, cx, cy, size, t) {
+  Art.drawMonster = function (ctx, mon, cx, cy, size, t, showBadge) {
     const p = mon.pal || { main: '#888', dark: '#333', light: '#ccc', eye: '#fff' };
+    if (showBadge === undefined) showBadge = true;
     ctx.save();
     ctx.translate(cx, cy);
     const k = size / 100;
@@ -954,6 +1072,25 @@
     const bob = Math.sin((t || 0) * 2 + (mon.id ? mon.id.length : 0)) * 2.2;
     ctx.translate(0, bob);
     (FAMILY[mon.family] || FAMILY.blob)(ctx, p, t || 0);
+
+    /* 强度等级徽章：Lv.XX 悬于头顶 */
+    if (mon.lv && showBadge) {
+      const label = 'Lv.' + mon.lv;
+      ctx.font = '700 19px system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      const tw = ctx.measureText(label).width;
+      const bw = tw + 16, bh = 20, by = -62;
+      ctx.fillStyle = mon.boss ? 'rgba(60,10,14,0.88)' : 'rgba(12,9,16,0.82)';
+      rr(ctx, -bw / 2, by - bh / 2, bw, bh, bh / 2);
+      ctx.fill();
+      ctx.strokeStyle = mon.boss ? 'rgba(255,120,90,0.85)' : 'rgba(217,184,106,0.6)';
+      ctx.lineWidth = 1.5;
+      rr(ctx, -bw / 2, by - bh / 2, bw, bh, bh / 2);
+      ctx.stroke();
+      ctx.fillStyle = mon.boss ? '#ffb9a3' : '#f2dca6';
+      ctx.fillText(label, 0, by + 0.5);
+    }
     ctx.restore();
   };
 
@@ -1131,7 +1268,7 @@
     ctx.arc(0, 27.4, 2.2, 0, TAU);
     ctx.fill();
     ctx.restore();
-    ctx.restore();
+    ctx.restore(); // 外层 translate+scale 必须复原，否则变换逐帧累积（地图被缩小重绘）
   };
 
   /* ------------------------------------------------------------ 地图物件 */

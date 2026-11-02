@@ -24,6 +24,7 @@
     </div>
     <div class="hud-sub">
       <div class="chip chip-gold"><span class="chip-ico">◉</span><b id="hud-gold">0</b></div>
+      <div class="chip chip-crit" title="暴击率 × 暴击伤害倍率"><span class="chip-ico">✦</span><b id="hud-crit">0%</b></div>
       <div class="keys">
         <span class="key key-y"><i></i><b id="hud-ky">1</b></span>
         <span class="key key-b"><i></i><b id="hud-kb">0</b></span>
@@ -141,7 +142,10 @@ function wait(ms){ return new Promise(r=>setTimeout(r,ms)); }
   } else if (scenario === 'manual') {
     MTHD.openManual();
   } else if (scenario === 'shop') {
-    G.gold = 5000; MTHD.openShop();
+    G.gold = 5000; G.keys.y = 5; G.critRate = 0.04; G.goldBonus = 0.1;
+    for (let f=2; f<=5; f++) G.travel('up');
+    MTHD.teleport(5, 5);
+    MTHD.openShop();
   } else if (scenario === 'bossitem') {
     // Boss 层：物品可拾取（无红框）、楼梯红框警示
     G.hp = 3900; G.atk = 30; G.def = 32; G.keys.r = 1;

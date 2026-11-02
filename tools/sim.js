@@ -52,21 +52,17 @@ function walk(game, path) {
 
 function buyAll(game) {
   let bought = 0;
-  let healed = false;
-  for (let i = 0; i < 300; i++) {
+  for (let i = 0; i < 40; i++) {
     const os = game.shopOffer();
-    let pick = null;
+    // 钥匙兑换：黄钥匙富余（至少留 1 把）就换蓝钥匙开宝石箱
+    const ex = os.find((o) => o.id === 'exYB');
+    if (ex && game.keys.y >= 4) { game.buy('exYB'); bought++; continue; }
     // 低血优先回复
-    if (!healed && game.hp < 3500) {
-      pick = os.find((o) => o.id === 'hp') || os.find((o) => o.id === 'hpatk');
-      if (pick && game.gold >= pick.cost) healed = true;
-      else pick = null;
-    }
-    if (!pick) pick = os.find((o) => o.id === 'def' || o.id === 'atk');
-    // 血量见底时献祭换防御（生命减半损失有限）
-    if (!pick && game.hp <= 1000) pick = os.find((o) => o.id === 'halfdef');
-    if (!pick && game.gold > (os[0] ? os[0].cost * 2.2 : Infinity)) pick = os.find((o) => o.id === 'atkdef'); // 富余才买狂暴
-    if (!pick) pick = os.find((o) => o.id !== 'hpatk' && o.cost <= game.gold);
+    let pick = null;
+    if (game.hp < game.maxHp * 0.5) pick = os.find((o) => o.id === 'hp200' && o.buysLeft > 0);
+    // 攻防优先，其次暴击，金币加成前期复利高
+    const order = game.floorNum <= 15 ? ['def4', 'atk4', 'goldB', 'critR', 'critD'] : ['def4', 'atk4', 'critR', 'critD', 'goldB'];
+    if (!pick) for (const id of order) { pick = os.find((o) => o.id === id && o.buysLeft > 0); if (pick) break; }
     if (!pick || game.gold < pick.cost) break;
     game.buy(pick.id);
     bought++;

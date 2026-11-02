@@ -110,6 +110,7 @@ svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width:
 .chip-atk { color: #ffd0ac; } .chip-atk .chip-ico { color: var(--atk); }
 .chip-def { color: #bfe6ff; } .chip-def .chip-ico { color: var(--def); }
 .chip-gold { color: var(--gold-hi); } .chip-gold .chip-ico { color: var(--gold); }
+.chip-crit { color: #f3b8ff; } .chip-crit .chip-ico { color: #c77dff; }
 
 .hud-sub { grid-area: sub; display: flex; align-items: center; gap: 8px; }
 .keys { display: flex; gap: 5px; margin-left: 2px; }
@@ -198,16 +199,16 @@ svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width:
 /* ---------------------------------------------------------------- 操作 */
 .pad {
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
-  gap: 14px;
+  gap: 24px;
   padding: 2px 2px 0;
 }
 .dpad {
   display: grid;
-  grid-template-columns: repeat(3, 52px);
-  grid-template-rows: repeat(3, 52px);
-  gap: 5px;
+  grid-template-columns: repeat(3, 62px);
+  grid-template-rows: repeat(3, 62px);
+  gap: 6px;
 }
 .dbtn {
   display: grid; place-items: center;
@@ -218,7 +219,7 @@ svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width:
   color: #cbbfac;
   transition: transform 0.05s ease, box-shadow 0.05s ease, background 0.12s;
 }
-.dbtn svg { width: 22px; height: 22px; }
+.dbtn svg { width: 27px; height: 27px; }
 .dbtn.up { grid-area: 1 / 2; }
 .dbtn.left { grid-area: 2 / 1; transform: rotate(-90deg); }
 .dbtn.right { grid-area: 2 / 3; transform: rotate(90deg); }
@@ -235,13 +236,15 @@ svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width:
 
 .acts {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 7px;
+  min-width: 0;
 }
 .abtn {
   display: flex; flex-direction: column; justify-content: center; gap: 1px;
-  padding: 8px 9px;
+  padding: 8px 7px;
   min-height: 50px;
+  min-width: 0;
   border-radius: 12px;
   background: linear-gradient(180deg, rgba(48, 40, 60, 0.9), rgba(26, 21, 34, 0.92));
   border: 1px solid rgba(217, 184, 106, 0.18);
@@ -249,8 +252,8 @@ svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width:
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
   transition: background 0.15s, border-color 0.15s;
 }
-.abtn b { font-size: 13px; letter-spacing: 0.08em; color: var(--gold-hi); font-weight: 700; }
-.abtn span { font-size: 9.5px; color: var(--muted); letter-spacing: 0.02em; }
+.abtn b { font-size: 12.5px; letter-spacing: 0.08em; color: var(--gold-hi); font-weight: 700; white-space: nowrap; }
+.abtn span { font-size: 9.5px; color: var(--muted); letter-spacing: 0.02em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .abtn:active { background: linear-gradient(180deg, rgba(217, 184, 106, 0.3), rgba(120, 96, 44, 0.24)); }
 .abtn-go { border-color: rgba(226, 87, 76, 0.45); }
 .abtn-go b { color: #ffb0a3; }
@@ -403,6 +406,9 @@ svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width:
   font-variant-numeric: tabular-nums;
 }
 .shop-buy:disabled { opacity: 0.4; }
+.shop-exchange { border-color: rgba(90, 168, 240, 0.35); background: rgba(90, 168, 240, 0.07); }
+.shop-exchange b { color: #7fc0ff; }
+.shop-exchange .shop-buy { background: rgba(90, 168, 240, 0.16); border-color: rgba(90, 168, 240, 0.4); color: #a8d4ff; }
 
 /* 结算 */
 .result { text-align: center; padding: 10px 0 4px; }
@@ -461,7 +467,8 @@ svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width:
 
 /* 超小屏兜底（iPhone SE / XR 横屏等） */
 @media (max-height: 700px) {
-  .dpad { grid-template-columns: repeat(3, 46px); grid-template-rows: repeat(3, 46px); }
+  .pad { gap: 18px; }
+  .dpad { grid-template-columns: repeat(3, 55px); grid-template-rows: repeat(3, 55px); }
   .abtn { min-height: 44px; padding: 6px 8px; }
   .hud { padding: 6px 9px; }
 }

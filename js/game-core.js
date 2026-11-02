@@ -60,8 +60,8 @@
     skeletonKing: { name: '骸骨王', family: 'skeleton', base: 10, hp: 520, atk: 95, def: 8, gold: 150, boss: true, pal: { main: '#e8e2cf', dark: '#5a5240', light: '#fffdf0', eye: '#ff4d4d', crown: '#ffcf5a' } },
     gargoyleKing: { name: '石像鬼王', family: 'gargoyle', base: 20, hp: 1250, atk: 160, def: 20, gold: 350, boss: true, pal: { main: '#8a93a8', dark: '#343c4c', light: '#cdd8e8', eye: '#ffb347' } },
     vampireLord: { name: '血族亲王', family: 'vampire', base: 30, hp: 2600, atk: 205, def: 40, gold: 650, boss: true, pal: { main: '#7a1f3a', dark: '#2a0812', light: '#e88aa0', eye: '#ff2d55', cape: '#1c040c' } },
-    boneLord: { name: '白骨龙王', family: 'dragon', base: 40, hp: 4200, atk: 270, def: 58, gold: 1000, boss: true, pal: { main: '#d8d0b8', dark: '#5a5244', light: '#fffbe8', eye: '#ff6b4a' } },
-    towerLord: { name: '魔塔之主', family: 'demon', base: 50, hp: 6200, atk: 335, def: 80, gold: 0, boss: true, pal: { main: '#3a1030', dark: '#12040f', light: '#ff4d8d', eye: '#ffe066' } }
+    boneLord: { name: '白骨龙王', family: 'dragon', base: 40, hp: 4200, atk: 245, def: 58, gold: 1000, boss: true, pal: { main: '#d8d0b8', dark: '#5a5244', light: '#fffbe8', eye: '#ff6b4a' } },
+    towerLord: { name: '魔塔之主', family: 'demon', base: 50, hp: 6200, atk: 285, def: 80, gold: 0, boss: true, pal: { main: '#3a1030', dark: '#12040f', light: '#ff4d8d', eye: '#ffe066' } }
   };
   MT.MONSTERS = MONSTERS;
 
@@ -80,30 +80,40 @@
   ];
   MT.POOLS = POOLS;
 
-  MT.BALANCE = { hpGrow: 0.115, atkGrow: 0.245, defGrow: 0.085, goldGrow: 0.10, threat: 0.006, power: 0.67, mdef: 0.55 };
+  MT.BALANCE = { hpGrow: 0.05, atkGrow: 0.025, defGrow: 0.014, goldGrow: 0.05, threat: 0.006, power: 0.60, bossPower: 0.238, mdef: 0.55 };
 
-  /* 同一层段的怪物共用同一缩放基准，避免旧怪物被无限放大 */
+  /* 兼容保留：旧 sweep 工具引用 */
   function bandStart(floor) { return Math.floor((floor - 1) / 5) * 5 + 1; }
   MT.bandStart = bandStart;
 
+  /* 怪物强度等级：由最终数值折算，用于头顶 Lv 标识 */
+  function monsterLevel(hp, atk, def) {
+    return Math.max(1, Math.round(Math.sqrt(hp + (atk + def) * 10) / 2.6));
+  }
+
+  /* 连续成长：不再按层段锯齿重置，前期也有成长、整条曲线平滑。
+     普通怪用 power，守关 Boss 用独立的 bossPower（Boss 是关卡门槛，需单独调） */
   function scaleMonster(id, floor) {
     const B = MT.BALANCE;
     const m = MONSTERS[id];
-    const d = m.boss ? 0 : Math.max(0, floor - bandStart(floor));
-    return {
+    const t = Math.max(0, floor - 1);
+    const bp = m.boss ? B.bossPower : B.power;
+    const s = {
       id: id, name: m.name, family: m.family, pal: m.pal, boss: !!m.boss,
-      hp: Math.round(m.hp * (1 + B.hpGrow * d) * (m.boss ? 1 : (1 + B.threat * floor * 0.7)) * B.power),
-      atk: Math.round(m.atk * (1 + B.atkGrow * d) * (m.boss ? 1 : (1 + B.threat * floor)) * B.power),
-      def: Math.round(m.def * (1 + B.defGrow * d) * B.mdef),
-      gold: Math.round(m.gold * (1 + B.goldGrow * d))
+      hp: Math.round(m.hp * (1 + B.hpGrow * t) * (m.boss ? 1 : (1 + B.threat * floor * 0.7)) * bp),
+      atk: Math.round(m.atk * (1 + B.atkGrow * t) * (m.boss ? 1 : (1 + B.threat * floor)) * bp) + 5,
+      def: Math.round(m.def * (1 + B.defGrow * t) * B.mdef) + 5,
+      gold: Math.round(m.gold * (1 + B.goldGrow * t))
     };
+    s.lv = monsterLevel(s.hp, s.atk, s.def) + (m.boss ? 5 : 0);
+    return s;
   }
   MT.scaleMonster = scaleMonster;
 
   /* ------------------------------------------------------------------ 道具 */
   const ITEMS = {
-    potionRed: { name: '红药水', short: '红', heal: 120, color: '#e04a4a', desc: '恢复 120 点生命' },
-    potionBlue: { name: '蓝药水', short: '蓝', heal: 320, color: '#4a8ce0', desc: '恢复 320 点生命' },
+    potionRed: { name: '红药水', short: '红', heal: 24, color: '#e04a4a', desc: '恢复 24 点生命' },
+    potionBlue: { name: '蓝药水', short: '蓝', heal: 64, color: '#4a8ce0', desc: '恢复 64 点生命' },
     keyYellow: { name: '黄钥匙', short: '黄', key: 'y', color: '#e8c34a', desc: '开启黄门' },
     keyBlue: { name: '蓝钥匙', short: '蓝', key: 'b', color: '#5aa8f0', desc: '开启蓝门' },
     keyRed: { name: '红钥匙', short: '红', key: 'r', color: '#e0534a', desc: '开启红门' },
@@ -298,8 +308,8 @@
     }
 
     /* 钥匙经济（所有钥匙都放在无锁区域，主流程永不卡关）：
-       黄钥匙 = 本层黄锁数量 + 3（宽松余量，不再滥发）；
-       蓝钥匙 = 本层蓝锁数量 - 2（刻意短缺：+2 宝石全部锁在蓝锁之后，玩家必须取舍）；
+       黄钥匙 = 本层黄锁数量 + 1（紧平衡，富余钥匙可去商店换蓝钥匙）；
+       蓝钥匙 = 本层蓝锁数量 - 1（刻意短缺：+2 宝石全部锁在蓝锁之后，玩家必须取舍）；
        红钥匙 = 红锁数量（Boss 层主门 1 把） */
     const keyOf = function (c) { return c === 'y' ? 'keyYellow' : c === 'b' ? 'keyBlue' : 'keyRed'; };
     const item = function (id) { return { kind: 'item', id: id }; };
@@ -327,11 +337,11 @@
 
     /* 按锁数投放钥匙 */
     const yellowLocks = (color === 'y' ? 1 : 0) + (treasure && treasure.color === 'y' ? 1 : 0) + (floor >= 3 ? 1 : 0);
-    for (let i = 0; i < yellowLocks + 3; i++) {
+    for (let i = 0; i < yellowLocks + 1; i++) {
       g[openSpots[ki].y][openSpots[ki].x].o = item('keyYellow'); ki++;
     }
     const blueLocks = blueChests.length + (treasure && treasure.color === 'b' ? 1 : 0);
-    for (let i = 0; i < blueLocks - 2; i++) {
+    for (let i = 0; i < blueLocks - 1; i++) {
       g[openSpots[ki].y][openSpots[ki].x].o = item('keyBlue'); ki++;
     }
     if (color === 'r') { g[openSpots[ki].y][openSpots[ki].x].o = item('keyRed'); ki++; }
@@ -363,9 +373,36 @@
       });
     }
 
-    /* 商店：每 5 层 */
+    /* 商店：每 5 层。只放在“非必经格”上——把该格挖掉后，起点仍能不经过任何门/宝箱
+       直达上楼梯，说明它不在唯一主路上，玩家可以完全绕开商店 */
     if (floor % 5 === 0) {
-      const spot = freeIn([entry])[0] || openSpots[ki++];
+      const reaches = function (bx, by) {
+        const seen = [];
+        for (let y = 0; y < SIZE; y++) seen.push(new Array(SIZE).fill(false));
+        const q = [{ x: data.start.x, y: data.start.y }];
+        seen[data.start.y][data.start.x] = true;
+        while (q.length) {
+          const c = q.pop();
+          if (c.x === data.up.x && c.y === data.up.y) return true;
+          for (let i2 = 0; i2 < 4; i2++) {
+            const nx = c.x + DIRS[i2][0], ny = c.y + DIRS[i2][1];
+            if (nx < 0 || ny < 0 || nx >= SIZE || ny >= SIZE || seen[ny][nx]) continue;
+            const t = g[ny][nx];
+            if (t.t === 'wall' || t.t === 'gate') continue;
+            if (t.o && t.o.kind === 'chest') continue;
+            if (nx === bx && ny === by) continue;
+            seen[ny][nx] = true;
+            q.push({ x: nx, y: ny });
+          }
+        }
+        return false;
+      };
+      let spot = null, bestD = -1;
+      freeIn(openRooms).forEach(function (p) {
+        if (reaches(p.x, p.y)) return; // 必经格，跳过
+        const d0 = Math.abs(p.x - data.start.x) + Math.abs(p.y - data.start.y);
+        if (d0 > bestD) { bestD = d0; spot = p; }
+      });
       if (spot) g[spot.y][spot.x] = { t: 'shop', o: null };
     }
 
@@ -381,6 +418,34 @@
       const id = pool[Math.floor(rng() * pool.length)];
       const p = spots[si++];
       g[p.y][p.x].o = { kind: 'monster', m: scaleMonster(id, floor) };
+    }
+
+    /* 精英怪：把 30 层以上的怪物提前放到前面的楼层（13~29 层，约半数楼层出现一只）。
+       只藏在有锁的宝物房或死路格里——死路不在任何必经之路上，绝不挡主路 */
+    if (floor >= 13 && floor <= 29 && rng() < 0.5) {
+      const ef = Math.min(50, floor + 15);
+      const eb = Math.min(POOLS.length - 1, Math.floor((ef - 1) / 5));
+      const id = POOLS[eb][Math.floor(rng() * POOLS[eb].length)];
+      let spot = null;
+      if (treasure) {
+        const ts = freeIn([treasure.room]);
+        if (ts.length) spot = ts[Math.floor(rng() * ts.length)];
+      }
+      if (!spot) {
+        const dead = [];
+        for (let y = 1; y < SIZE - 1; y++) for (let x = 1; x < SIZE - 1; x++) {
+          const c = g[y][x];
+          if (c.t !== 'floor' || c.o) continue;
+          let openN = 0;
+          for (let i2 = 0; i2 < 4; i2++) {
+            const n = g[y + DIRS[i2][1]] && g[y + DIRS[i2][1]][x + DIRS[i2][0]];
+            if (n && n.t !== 'wall') openN++;
+          }
+          if (openN === 1) dead.push({ x: x, y: y });
+        }
+        if (dead.length) spot = dead[Math.floor(rng() * dead.length)];
+      }
+      if (spot) g[spot.y][spot.x].o = { kind: 'monster', m: scaleMonster(id, ef) };
     }
 
     /* 守关 Boss：每 10 层一位，坐镇出口房间中心，楼梯挪到旁边 */
@@ -557,6 +622,10 @@
       this.necroOwned = false;
       this.necroEnergy = 0;
       this.lastDrop = null;
+      this.critRate = 0;      // 商店暴击率叠加（水晶剑另计）
+      this.critMult = 1.5;    // 暴击伤害倍率（基础 150%）
+      this.goldBonus = 0;     // 商店金币掉落加成
+      this.shopBuys = {};     // 各商品全场累计购买次数（限购 5）
       this.seen = new Set();
       this.kills = 0;
       this.state = 'play';
@@ -665,7 +734,7 @@
     pickup(id) {
       const it = ITEMS[id];
       if (!it) return null;
-      if (it.scale) { this.gold += 40 + this.floorNum * 10; return id; }
+      if (it.scale) { this.gold += Math.round((40 + this.floorNum * 10) * (1 + this.goldBonus)); return id; }
       if (it.heal) { this.hp += it.heal; if (this.hp > this.maxHp) this.maxHp = this.hp; }
       if (it.atk) this.atk += it.atk;
       if (it.def) this.def += it.def;
@@ -675,6 +744,15 @@
       return id;
     }
 
+    /* 生效暴击参数：基础值 + 商店叠加 + 水晶剑加成 */
+    critInfo() {
+      const sword = this.equip.weapon === 'sword';
+      return {
+        rate: Math.min(1, this.critRate + (sword ? 0.30 : 0)),
+        mult: this.critMult + (sword ? 0.10 : 0)
+      };
+    }
+
     /* 战斗预估（用期望值 / 最坏 / 最好三档） */
     preview(mon) {
       const base = this.atk - mon.def;
@@ -682,6 +760,7 @@
       const sword = this.equip.weapon === 'sword';
       const armor = this.equip.armor === 'armor';
       const satan = this.equip.relic === 'satan';
+      const ci = this.critInfo();
       const self = this;
       const run = function (mult) {
         const per = Math.max(0, Math.round(base * mult));
@@ -700,13 +779,13 @@
         }
         return { win: php > 0 && mhp <= 0, rounds: rounds, loss: php > 0 ? loss : self.hp, hpLeft: Math.max(0, php), dead: php <= 0 };
       };
-      const expected = run(sword ? 1.18 : 1);
+      const expected = run(1 + ci.rate * (ci.mult - 1));
       const worst = run(1);
-      const best = run(sword ? 1.6 : 1);
+      const best = run(ci.rate > 0 ? ci.mult : 1);
       return {
-        mon: mon, base: base, dm: dm, sword: sword, armor: armor, satan: satan,
+        mon: mon, base: base, dm: dm, sword: sword, armor: armor, satan: satan, crit: ci,
         expected: expected, worst: worst, best: best,
-        canWin: expected.win, gold: mon.gold
+        canWin: expected.win, gold: Math.round(mon.gold * (1 + this.goldBonus))
       };
     }
 
@@ -717,6 +796,7 @@
       const sword = this.equip.weapon === 'sword';
       const armor = this.equip.armor === 'armor';
       const satan = this.equip.relic === 'satan';
+      const ci = this.critInfo();
       if (base <= 0 && !armor) {
         return { log: [], win: false, impossible: true, loss: this.hp, hpLeft: 0, gold: 0 };
       }
@@ -724,8 +804,8 @@
       const log = [];
       let guard = 0;
       while (mhp > 0 && php > 0 && guard++ < 999) {
-        const crit = sword && Math.random() < 0.3;
-        const per = Math.max(0, Math.round(base * (crit ? 1.6 : 1)));
+        const crit = Math.random() < ci.rate;
+        const per = Math.max(0, Math.round(base * (crit ? ci.mult : 1)));
         mhp -= per;
         const ev = { pDmg: per, crit: crit, mHp: Math.max(0, mhp), mDmg: 0, reflect: 0, heal: 0, pHp: php };
         if (mhp <= 0) { ev.kill = true; log.push(ev); break; }
@@ -744,7 +824,7 @@
         if (php <= 0) break;
       }
       const win = php > 0 && mhp <= 0;
-      return { log: log, win: win, loss: win ? loss : this.hp, hpLeft: Math.max(0, php), gold: win ? mon.gold : 0, dead: php <= 0 };
+      return { log: log, win: win, loss: win ? loss : this.hp, hpLeft: Math.max(0, php), gold: win ? Math.round(mon.gold * (1 + this.goldBonus)) : 0, dead: php <= 0 };
     }
 
     commitBattle(x, y, result) {
@@ -783,32 +863,59 @@
       return gain;
     }
 
-    /* 商店：6 种商品，每个商店随机上架 3 种，价格统一按楼层核算 */
-    shopOffer() {
-      const f = this.floorNum;
-      const C = 90 + f * 18; // 统一基准价
-      const ALL = [
-        { id: 'atk', name: '攻击 +4', desc: '磨锋利刃，永久生效', cost: C, apply: (g) => { g.atk += 4; } },
-        { id: 'def', name: '防御 +4', desc: '精铸护符，永久生效', cost: C, apply: (g) => { g.def += 4; } },
-        { id: 'hp', name: '生命 +900', desc: '大瓶生命药剂，上限提升', cost: Math.round(C * 0.7), apply: (g) => { g.hp += 900; if (g.hp > g.maxHp) g.maxHp = g.hp; } },
-        { id: 'hpatk', name: '生命 +2000，攻击 -2', desc: '以力量换取生机', cost: Math.round(C * 0.45), apply: (g) => { g.hp += 2000; if (g.hp > g.maxHp) g.maxHp = g.hp; g.atk = Math.max(1, g.atk - 2); } },
-        { id: 'atkdef', name: '攻击 +9，防御 -4', desc: '狂暴之力，舍防求攻', cost: Math.round(C * 0.9), apply: (g) => { g.atk += 9; g.def = Math.max(0, g.def - 4); } },
-        { id: 'halfdef', name: '生命减半，防御 +4', desc: '献祭血肉，铸就护符（当前生命减半）', cost: Math.round(C * 0.6), apply: (g) => { g.hp = Math.max(1, Math.floor(g.hp / 2)); g.def += 4; } }
+    /* 商店：6 种固定商品，每个商店随机上架 3 种 + 1 个钥匙兑换。
+       定价 = 基础价 ×(1+2%×累计购买次数)×(1-楼层×1%)；
+       每种商品全场限购 5 次，每次购买后价格永久 +2%。 */
+    static SHOP_ITEMS() {
+      return [
+        { id: 'atk4', name: '攻击 +4', desc: '磨锋利刃，永久生效', base: 140, apply: (g) => { g.atk += 4; } },
+        { id: 'def4', name: '防御 +4', desc: '精铸护符，永久生效', base: 130, apply: (g) => { g.def += 4; } },
+        { id: 'hp200', name: '生命 +200', desc: '生命药剂，立即回复', base: 70, apply: (g) => { g.hp = Math.min(g.maxHp, g.hp + 200); } },
+        { id: 'goldB', name: '金币掉落 +10%', desc: '商人的幸运符，战斗与金币袋收益永久提升', base: 160, apply: (g) => { g.goldBonus += 0.10; } },
+        { id: 'critR', name: '暴击率 +2%', desc: '每次攻击有更高概率打出暴击', base: 150, apply: (g) => { g.critRate = Math.min(1, g.critRate + 0.02); } },
+        { id: 'critD', name: '暴击伤害 +5%', desc: '暴击时造成更高倍率伤害（基础 150%）', base: 140, apply: (g) => { g.critMult += 0.05; } }
       ];
+    }
+    static SHOP_LIMIT = 5;
+
+    shopPrice(def) {
+      const bought = this.shopBuys[def.id] || 0;
+      const disc = Math.max(0.3, 1 - this.floorNum * 0.01);
+      return Math.max(1, Math.round(def.base * (1 + bought * 0.02) * disc));
+    }
+
+    shopOffer() {
+      const defs = Game.SHOP_ITEMS();
       // 同一层货架固定：种子取楼层
-      const rng = mulberry32(0x5eed + f * 104729);
-      const pool = ALL.slice();
+      const rng = mulberry32(0x5eed + this.floorNum * 104729);
+      const pool = defs.slice();
       const out = [];
       for (let i = 0; i < 3 && pool.length; i++) {
-        out.push(pool.splice(Math.floor(rng() * pool.length), 1)[0]);
+        const def = pool.splice(Math.floor(rng() * pool.length), 1)[0];
+        const bought = this.shopBuys[def.id] || 0;
+        out.push({
+          id: def.id, name: def.name, desc: def.desc,
+          cost: this.shopPrice(def),
+          buysLeft: Math.max(0, Game.SHOP_LIMIT - bought)
+        });
       }
+      out.push({ id: 'exYB', name: '黄钥匙 ×3 → 蓝钥匙 ×1', desc: '以量换质：3 把黄钥匙兑换 1 把蓝钥匙', cost: 0, buysLeft: Infinity, exchange: true });
       return out;
     }
+
     buy(id) {
+      if (id === 'exYB') {
+        if ((this.keys.y || 0) < 3) return false;
+        this.keys.y -= 3;
+        this.keys.b = (this.keys.b || 0) + 1;
+        return true;
+      }
       const o = this.shopOffer().find(function (x) { return x.id === id; });
-      if (!o || this.gold < o.cost) return false;
+      if (!o || o.exchange || o.buysLeft <= 0 || this.gold < o.cost) return false;
       this.gold -= o.cost;
-      o.apply(this);
+      const def = Game.SHOP_ITEMS().find(function (d) { return d.id === id; });
+      def.apply(this);
+      this.shopBuys[id] = (this.shopBuys[id] || 0) + 1;
       return true;
     }
 
