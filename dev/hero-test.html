@@ -1,0 +1,19 @@
+<!doctype html><html><head><meta charset="utf-8"><style>body{margin:0;background:#20242c}canvas{display:block}</style></head>
+<body><canvas id="c" width="1000" height="600"></canvas>
+<script src="../js/game-core.js"></script><script src="../js/art.js"></script><script>
+const Art=MT.Art;
+const c=document.getElementById('c').getContext('2d');
+try{
+  c.fillStyle='#2a2f3a';c.fillRect(0,0,1000,600);
+  // 大图
+  Art.drawHero(c,250,330,400,1.2);
+  // 小图（地图尺寸感）
+  c.fillStyle='#3a3140';c.fillRect(560,60,400,400);
+  Art.drawHero(c,680,180,40,1.0);
+  Art.drawHero(c,780,180,40,1.0,{swing:-1.0});
+  Art.drawHero(c,880,180,40,1.0);
+  Art.drawHero(c,680,320,60,2.0);
+  Art.drawHero(c,800,320,60,2.0);
+  c.fillStyle='#8f8';c.font='14px sans-serif';c.fillText('large 400 / map 40 / battle 60',20,580);
+}catch(e){c.fillStyle='#f88';c.font='14px monospace';c.fillText(String(e&&e.stack||e).slice(0,500),20,30);}
+</script></body></html>

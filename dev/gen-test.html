@@ -1,0 +1,13 @@
+<!doctype html><html><head><meta charset="utf-8"></head><body><pre id="out">running</pre>
+<script src="../js/game-core.js"></script><script>
+const out=[];
+try{
+  for (const f of [1,2,3,5,10]) {
+    const d=MT.generateFloor(f);
+    let mons=0,items=0,gates=0;
+    for(let y=0;y<11;y++)for(let x=0;x<11;x++){const c=d.g[y][x];if(c.o&&c.o.kind==='monster')mons++;if(c.o&&c.o.kind==='item')items++;if(c.t==='gate')gates++;}
+    out.push('F'+f+' mons'+mons+' items'+items+' gates'+gates+' rooms'+d.rooms.length);
+  }
+}catch(e){out.push('ERR '+e.stack);}
+document.getElementById('out').textContent=out.join('\n');
+</script></body></html>

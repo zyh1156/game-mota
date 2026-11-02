@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0d0a11">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="format-detection" content="telephone=no">
+<title>魔塔 50 · 高清重制</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app" id="app">
+
+  <header class="hud" id="hud">
+    <div class="hud-left">
+      <div class="floor-badge"><span id="hud-floor">1</span><small>层</small></div>
+      <div class="hud-title"><b>魔塔 50</b><i id="hud-theme">地牢外围</i></div>
+    </div>
+    <div class="hud-stats">
+      <div class="chip chip-hp"><span class="chip-ico">♥</span><b id="hud-hp">1000</b></div>
+      <div class="chip chip-atk"><span class="chip-ico">⚔</span><b id="hud-atk">10</b></div>
+      <div class="chip chip-def"><span class="chip-ico">⛨</span><b id="hud-def">10</b></div>
+    </div>
+    <div class="hud-sub">
+      <div class="chip chip-gold"><span class="chip-ico">◉</span><b id="hud-gold">0</b></div>
+      <div class="keys">
+        <span class="key key-y"><i></i><b id="hud-ky">1</b></span>
+        <span class="key key-b"><i></i><b id="hud-kb">0</b></span>
+        <span class="key key-r"><i></i><b id="hud-kr">0</b></span>
+      </div>
+      <button class="gear-btn" id="btn-equip-quick" aria-label="装备">
+        <span class="equip-mini" id="equip-mini"></span>
+      </button>
+    </div>
+  </header>
+
+  <section class="stage" id="stage">
+    <canvas id="board" width="400" height="400" aria-label="魔塔地图"></canvas>
+    <div class="card" id="card" hidden aria-live="polite">
+      <div class="card-head">
+        <span class="card-name" id="card-name">怪物</span>
+        <span class="card-tag" id="card-tag">可战胜</span>
+      </div>
+      <div class="card-stats"><span>生命 <b id="card-hp">0</b></span><span>攻击 <b id="card-atk">0</b></span><span>防御 <b id="card-def">0</b></span></div>
+      <div class="card-predict">
+        <div class="pred-main"><span>预计损失</span><b id="card-loss">0</b></div>
+        <div class="pred-side"><span>战后剩余</span><b id="card-left">0</b></div>
+        <div class="pred-side"><span>金币收益</span><b id="card-gold">0</b></div>
+      </div>
+      <div class="card-range" id="card-range"></div>
+      <div class="card-tip" id="card-tip"></div>
+    </div>
+  </section>
+
+  <nav class="pad" aria-label="移动与操作">
+    <div class="dpad">
+      <button class="dbtn up" data-dir="up" aria-label="向上"><svg viewBox="0 0 24 24"><path d="m5 14 7-7 7 7"/></svg></button>
+      <button class="dbtn left" data-dir="left" aria-label="向左"><svg viewBox="0 0 24 24"><path d="m5 14 7-7 7 7"/></svg></button>
+      <button class="dbtn right" data-dir="right" aria-label="向右"><svg viewBox="0 0 24 24"><path d="m5 14 7-7 7 7"/></svg></button>
+      <button class="dbtn down" data-dir="down" aria-label="向下"><svg viewBox="0 0 24 24"><path d="m5 14 7-7 7 7"/></svg></button>
+    </div>
+    <div class="acts">
+      <button class="abtn" id="btn-manual"><b>手册</b><span>怪物情报</span></button>
+      <button class="abtn" id="btn-equip"><b>装备</b><span>附加效果</span></button>
+      <button class="abtn" id="btn-menu"><b>菜单</b><span>重新开始</span></button>
+      <button class="abtn abtn-go" id="btn-fight" disabled><b>攻击</b><span>相邻目标</span></button>
+    </div>
+  </nav>
+
+  <aside class="side" aria-label="当前楼层情报">
+    <div class="side-block">
+      <h3>本层怪物</h3>
+      <div class="side-list" id="side-list"></div>
+    </div>
+    <div class="side-block side-tips">
+      <h3>操作</h3>
+      <p>方向键 / WASD 移动 · 撞向怪物即开战</p>
+      <p>点击怪物可查看战斗预估与收益</p>
+      <p>B 手册 · E 装备 · Esc 菜单</p>
+    </div>
+  </aside>
+</div>
+
+<div class="battle" id="battle" hidden>
+  <canvas id="bcanvas"></canvas>
+  <button class="battle-skip" id="battle-skip">点击跳过</button>
+</div>
+
+<div class="sheet-wrap" id="sheet-wrap" hidden>
+  <div class="sheet" id="sheet" role="dialog" aria-modal="true">
+    <header class="sheet-head"><h2 id="sheet-title">标题</h2><button class="sheet-close" id="sheet-close" aria-label="关闭">✕</button></header>
+    <div class="sheet-body" id="sheet-body"></div>
+    <footer class="sheet-foot" id="sheet-foot"></footer>
+  </div>
+</div>
+
+<script src="js/game-core.js"></script>
+<script src="js/art.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/ui.js"></script>
+</body>
+</html>
