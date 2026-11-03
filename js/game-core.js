@@ -86,9 +86,13 @@
   function bandStart(floor) { return Math.floor((floor - 1) / 5) * 5 + 1; }
   MT.bandStart = bandStart;
 
-  /* 怪物强度等级：由最终数值折算，用于头顶 Lv 标识 */
-  function monsterLevel(hp, atk, def) {
-    return Math.max(1, Math.round(Math.sqrt(hp + (atk + def) * 10) / 2.6));
+  /* 怪物强度等级：按最终攻击+防御之和折算到 1~100。
+     标定范围取自当前平衡参数下的全塔极值：绿史莱姆@F1 (10+5=15) ~ 魔王守卫@F50 (217+44=261)，
+     超出范围的按 1 / 100 截断 */
+  function monsterLevel(atk, def) {
+    const LO = 15, HI = 261;
+    const lv = Math.round((atk + def - LO) / (HI - LO) * 99) + 1;
+    return Math.max(1, Math.min(100, lv));
   }
 
   /* 连续成长：不再按层段锯齿重置，前期也有成长、整条曲线平滑。
@@ -105,7 +109,7 @@
       def: Math.round(m.def * (1 + B.defGrow * t) * B.mdef) + 5,
       gold: Math.round(m.gold * (1 + B.goldGrow * t))
     };
-    s.lv = monsterLevel(s.hp, s.atk, s.def) + (m.boss ? 5 : 0);
+    s.lv = monsterLevel(s.atk, s.def);
     return s;
   }
   MT.scaleMonster = scaleMonster;
