@@ -88,33 +88,78 @@
     const el = new Audio();
     el.loop = true;
     el.preload = 'auto';
-    el.volume = 0;
+    el.volume = 1;
     el.src = encodeURI(file);
     el.addEventListener('error', function () { el.__broken = true; });
+    // 移动端（iOS 等）HTMLAudio.volume 只读/无效，必须用 WebAudio Gain 控音量
+    if (actx) {
+      try {
+        const src = actx.createMediaElementSource(el);
+        const gain = actx.createGain();
+        gain.gain.value = 0;
+        src.connect(gain);
+        gain.connect(actx.destination);
+        el.__gain = gain;
+      } catch (e) { el.__gain = null; }
+    }
     return el;
   }
 
-  function fadeTo(el, target, step) {
-    if (!el || el.__broken) return;
-    clearInterval(el.__fade);
-    el.__fade = setInterval(function () {
-      const v = el.volume;
-      const nv = v + (target > v ? 1 : -1) * step;
-      el.volume = Math.max(0, Math.min(target, nv));
-      if (el.volume === target) clearInterval(el.__fade);
-    }, 60);
+  /* 目标音量：优先 GainNode，退回 el.volume */
+  function setVol(el, v) {
+    if (el.__gain) el.__gain.gain.value = v;
+    else try { el.volume = v; } catch (e) { }
+  }
+  function getVol(el) {
+    return el.__gain ? el.__gain.gain.value : el.volume;
+  }
+
+  function fadeTo(el, target, dur, done) {
+    if (!el || el.__broken) { if (done) done(); return; }
+    if (el.__fade) { clearTimeout(el.__fade); el.__fade = null; }
+    if (el.__gain && actx) {
+      // WebAudio 精确淡入淡出
+      try {
+        const g = el.__gain.gain, t0 = actx.currentTime;
+        g.cancelScheduledValues(t0);
+        g.setValueAtTime(g.value, t0);
+        g.linearRampToValueAtTime(target, t0 + dur);
+      } catch (e) { }
+      if (el.__fade) clearInterval(el.__fade);
+      el.__fade = setTimeout(function () {
+        el.__fade = null;
+        setVol(el, target);
+        if (done) done();
+      }, dur * 1000 + 30);
+    } else {
+      // 兜底：步进淡入淡出
+      const t0 = getVol(el), steps = Math.max(1, Math.round(dur / 0.06));
+      const step = (target - t0) / steps;
+      let i = 0;
+      el.__fade = setInterval(function () {
+        i++;
+        setVol(el, Math.max(0, Math.min(target, t0 + step * i)));
+        if (i >= steps) { clearInterval(el.__fade); el.__fade = null; if (done) done(); }
+      }, 60);
+    }
   }
 
   function switchTo(name) {
     if (current === name) return;
-    const oldEl = current ? tracks[current] : null;
+    const oldName = current;
     current = name;
     const el = tracks[name];
     if (!el || el.__broken || !started) return;
-    if (oldEl && oldEl !== el) fadeTo(oldEl, 0, 0.04);
+    const oldEl = oldName ? tracks[oldName] : null;
+    if (oldEl && oldEl !== el && !oldEl.__broken) {
+      // 0.5 秒淡出后彻底暂停，杜绝新旧两轨重叠
+      fadeTo(oldEl, 0, 0.5, function () {
+        if (current !== oldName) { try { oldEl.pause(); } catch (e) { } }
+      });
+    }
     const p = el.play();
     if (p && p.catch) p.catch(function () { });
-    fadeTo(el, musicOn ? BGM_VOL : 0, 0.03);
+    fadeTo(el, musicOn ? BGM_VOL : 0, 0.6);
   }
 
   A.BGM_NORMAL = '光宗信吉 - 不安….mp3';
@@ -127,6 +172,7 @@
       return;
     }
     if (!ensureCtx()) return;
+    if (actx.state === 'suspended') actx.resume();
     started = true;
     tracks.normal = makeTrack(A.BGM_NORMAL);
     tracks.boss = makeTrack(A.BGM_BOSS);
@@ -144,8 +190,13 @@
     if (started) {
       const el = tracks[current];
       if (el && !el.__broken) {
-        if (musicOn) { const p = el.play(); if (p && p.catch) p.catch(function () { }); fadeTo(el, BGM_VOL, 0.05); }
-        else fadeTo(el, 0, 0.05);
+        if (musicOn) {
+          const p = el.play();
+          if (p && p.catch) p.catch(function () { });
+          fadeTo(el, BGM_VOL, 0.5);
+        } else {
+          fadeTo(el, 0, 0.5, function () { if (!musicOn) { try { el.pause(); } catch (e) { } } });
+        }
       }
     }
     return musicOn;

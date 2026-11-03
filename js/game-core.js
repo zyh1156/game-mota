@@ -622,8 +622,8 @@
       this.necroOwned = false;
       this.necroEnergy = 0;
       this.lastDrop = null;
-      this.critRate = 0;      // 商店暴击率叠加（水晶剑另计）
-      this.critMult = 1.5;    // 暴击伤害倍率（基础 150%）
+      this.critRate = 0.05;   // 基础暴击率 5%（商店/水晶剑另计叠加）
+      this.critMult = 1.10;   // 基础暴击伤害 110%（商店/水晶剑另计叠加）
       this.goldBonus = 0;     // 商店金币掉落加成
       this.shopBuys = {};     // 各商品全场累计购买次数（限购 5）
       this.seen = new Set();
@@ -873,7 +873,7 @@
         { id: 'hp200', name: '生命 +200', desc: '生命药剂，立即回复', base: 70, apply: (g) => { g.hp = Math.min(g.maxHp, g.hp + 200); } },
         { id: 'goldB', name: '金币掉落 +10%', desc: '商人的幸运符，战斗与金币袋收益永久提升', base: 160, apply: (g) => { g.goldBonus += 0.10; } },
         { id: 'critR', name: '暴击率 +2%', desc: '每次攻击有更高概率打出暴击', base: 150, apply: (g) => { g.critRate = Math.min(1, g.critRate + 0.02); } },
-        { id: 'critD', name: '暴击伤害 +5%', desc: '暴击时造成更高倍率伤害（基础 150%）', base: 140, apply: (g) => { g.critMult += 0.05; } }
+        { id: 'critD', name: '暴击伤害 +5%', desc: '暴击时造成更高倍率伤害（基础 110%）', base: 140, apply: (g) => { g.critMult += 0.05; } }
       ];
     }
     static SHOP_LIMIT = 5;
